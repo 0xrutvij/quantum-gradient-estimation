@@ -1,5 +1,5 @@
 # Quantum Gradient Estimation
-Quantum numerical gradient estimation using Jordan's Algorithm.
+Quantum numerical gradient estimation using Jordan's Algorithm; Qiskit Implementation.
 
 ## References
 
