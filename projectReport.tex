@@ -1,0 +1,139 @@
+% LaTeX Template For MATH 490 @ VCU
+\documentclass{article}
+
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+
+%%%%%%%%%% EXACT 1in MARGINS + DOUBEL SPACED %%%%%%%
+% NOTE IF YOU USE 1IN MARGINS CHANGE THE FONT 	  %%
+% SIZE TO 12PT IN THE FIRST LINE OF THIS DOCUMENT %%
+%\linespread{2}									  %%
+%\setlength{\textwidth}{6.5in}     				  %%
+%\setlength{\oddsidemargin}{0in}   				  %% 
+%\setlength{\evensidemargin}{0in}  				  %%
+%\setlength{\textheight}{8.5in}    				  %%
+%\setlength{\topmargin}{0in}      				  %%
+%\setlength{\headheight}{0in}     				  %%
+%\setlength{\headsep}{0in}       				  %%
+%\setlength{\footskip}{.5in}    				  %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\begin{document}
+
+\title{Quantum Numerical Gradient Estimation - Jordan's Algorithm}
+
+\author{Rutvij Shah}
+
+\maketitle              % typeset the title of the contribution
+
+
+% You don't need an abstract or keywords for an article review
+\begin{abstract}
+
+  Given a function \(f: \mathbb{R}^d \rightarrow \mathbb{R}\), which is known to be
+  continuously differentiable, one wants to estimate its gradient, \(\nabla f\) at
+  a given point \(\mathbf{x} = (x_1, x_2, \ldots x_d)\) with \(n\) bits of precision.
+  Classical algorithms require a minimum of \(d^i + 1\) queries to the function
+  for the \(i^{\text{th}}\) differential, whereas a quantum computer can be shown to
+  require \(2^{i - 1}\) queries, i.e. the number of queries is independent of the size
+  of the input, \(d\), of $\mathbf{x}$.
+
+
+\end{abstract}
+
+
+% TO MAKE A TITLE PAGE USE THE FOLLOWING COMMAND HERE.
+% \newpage
+
+
+
+
+\section{Introduction}
+
+Numerical gradient estimation is a ubiquitous part of many problems, ranging from neural
+networks, to dynamical systems, to computational fluid dynamics. For some of these, the
+objective functions are amongst the most computationally time consuming parts of the solution.
+In context of such numerical calculations, the query complexity of a function is a natural
+measure of its time complexity \cite{quant-ph/0405146}. Thus, an efficient algorithm is one which makes the fewest
+function evaluations; and our the number of such evaluation calls will define our time complexity.
+
+
+The Qiskit implementation of the algorithm included with this report, is for the case of \(d = 1\),
+and demonstrates the first differential (\(i = 1\)) of two simple functions,
+\(\sin(x)\) and \(10 x + e^{x}  + x^2\). The implementation utilizes quantum phase estimation as
+a subroutine and a modified \textit{unitary matrix}, which is further elaborated upon within the
+presentation. This report discusses the original algorithm and a few of the algorithms derived from
+it.
+
+
+\section{Solution Summary}
+
+
+The simple algorithm leverages the fact that, in the vicinity of a point \(\mathbf{x} = (x_1, x_2, \ldots x_d)\),
+\(e^{2 \pi \iota \lambda f(\mathbf{x})}\) is periodic, the period is parallel, and inversely
+proportional to the gradient \(\nabla f(\mathbf{x})\). A superposition state is created by
+discretizing a infinitesimal hyper-rectangle around the domain point, evaluating the function,
+rotating the phase in proportion to the value of the function, reversing the oracle call and
+applying a multidimensional quantum Fourier transform to the bits encoding the aforementioned
+hyper-rectangle \cite{quant-ph/0507109}.
+
+\section{Analysis}
+
+Here is where you summarize your analysis and evaluation. The most important points, strengths and weaknesses of the article need to be mentioned here. This section is where the mathematical content is showcased. Did the organization of the material help? Which results did you like the most and what surprised you? Remember: this is not where you do a summary! This is also the section where you may have to provide your own examples or material from other sources that would go along with the topic of the article. For example, if you really liked the result of a theorem, you might want to demonstrate your understanding of it by providing your own example. However, never forget that your aim is to tell about the article not the whole subject matter.
+
+\textbf{Remember:}
+
+\begin{enumerate}
+  \item I should be able to understand your entire paper without consulting the article you read. This means you need to define every technical term that you will use and build my (the reader's) intuition about the topic by giving simple examples, etc.
+  \item Use both in-line equations such as $x^2-x=0$ as well as centered equations like
+        $$(a-b)(c-d)(e-f)(g-h)=0.$$
+\end{enumerate}
+
+\section{Conclusion}
+
+Sum up the most important points you want to make about the article. Restate your overall evaluation. Tell whether the article increase your understanding of the subject or not. Why? Why not? Mention question you were expecting to be answered by the article that were not answered. Finally would you recommend others to read the article? Why?
+
+
+
+
+%
+% ---- Bibliography ----
+%
+\begin{thebibliography}{5}
+
+  \bibitem{quant-ph/0405146}
+  Stephen P. Jordan.
+  \newblock Fast quantum algorithm for numerical gradient estimation, 2004,
+  \newblock Phys. Rev. Lett. 95, 050501 (2005);
+  \newblock arXiv:quant-ph/0405146.
+  \newblock DOI: 10.1103/PhysRevLett.95.050501.
+
+  \bibitem{1711.00465}
+  András Gilyén, Srinivasan Arunachalam and Nathan Wiebe.
+  \newblock Optimizing quantum optimization algorithms via faster quantum gradient computation, 2017,
+  \newblock In Proceedings of the 30th ACM-SIAM Symposium on Discrete
+  Algorithms (SODA 2019), pp. 1425-1444;
+  \newblock arXiv:1711.00465.
+  \newblock DOI: 10.1137/1.9781611975482.87.
+
+
+  \bibitem{quant-ph/0507109}
+  David Bulger.
+  \newblock Quantum computational gradient estimation, 2005;
+  \newblock arXiv:quant-ph/0507109.
+
+  \bibitem{0908.1921}
+  Ivan Kassal and Alán Aspuru-Guzik.
+  \newblock Quantum Algorithm for Molecular Properties and Geometry Optimization, 2009,
+  \newblock J. Chem. Phys. 131, 224102 (2009);
+  \newblock arXiv:0908.1921.
+  \newblock DOI: 10.1063/1.3266959.
+
+
+\end{thebibliography}
+
+\end{document}

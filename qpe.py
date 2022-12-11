@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import QFT
@@ -15,8 +17,8 @@ class QuantumPhaseEstimation:
         cls,
         counting_qubits: int,
         ancillary_qubits: int,
-        unitary_matrix: np.ndarray = None,
-        phase_angle: float = None,
+        unitary_matrix: Optional[np.ndarray] = None,
+        phase_angle: Optional[float] = None,
     ) -> QuantumCircuit:
 
         if not ((phase_angle is None) ^ (unitary_matrix is None)):
@@ -29,7 +31,9 @@ class QuantumPhaseEstimation:
 
         circuit = QuantumCircuit(nq, cq)
 
-        circuit = cls._initialize_system(circuit, cq, aq, unitary_matrix, phase_angle)
+        circuit = cls._initialize_system(
+            circuit, cq, aq, unitary_matrix, phase_angle
+        )
 
         circuit.barrier()
         circuit = circuit.compose(QFT(cq, inverse=True), range(cq))
@@ -43,8 +47,8 @@ class QuantumPhaseEstimation:
         circuit: QuantumCircuit,
         cq: int,
         aq: int,
-        unitary_matrix: np.ndarray,
-        phase_angle: float,
+        unitary_matrix: Optional[np.ndarray],
+        phase_angle: Optional[float],
     ) -> QuantumCircuit:
 
         circuit.h(range(cq))
