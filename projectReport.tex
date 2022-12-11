@@ -5,6 +5,8 @@
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{physics}
 
 %%%%%%%%%% EXACT 1in MARGINS + DOUBEL SPACED %%%%%%%
 % NOTE IF YOU USE 1IN MARGINS CHANGE THE FONT 	  %%
@@ -83,7 +85,28 @@ hyper-rectangle \cite{quant-ph/0507109}.
 
 \section{Analysis}
 
-Here is where you summarize your analysis and evaluation. The most important points, strengths and weaknesses of the article need to be mentioned here. This section is where the mathematical content is showcased. Did the organization of the material help? Which results did you like the most and what surprised you? Remember: this is not where you do a summary! This is also the section where you may have to provide your own examples or material from other sources that would go along with the topic of the article. For example, if you really liked the result of a theorem, you might want to demonstrate your understanding of it by providing your own example. However, never forget that your aim is to tell about the article not the whole subject matter.
+Traditionally, for the 1D case, i.e. \(d = 1\), gradients are estimated either analytically, or by
+using the finite difference method. To calculate the first and other higher derivatives,
+should they exist, the procedure is as follows
+
+\begin{equation}
+  f'(x) =  \lim_{h \to \infty} \frac{f(x + h) - f(x)}{h}
+\end{equation}
+
+For the \(1^{\text{st}}\) gradient we need  \(d + 1\) calls to the function \(f(x)\).
+
+
+\begin{equation}
+  f''(x) =  \lim_{h \to \infty} \frac{f(x) - 2f(x - h) + f(x - 2h)}{h^2}
+\end{equation}
+
+For the \(2^{\text{st}}\) gradient we need  \(2d + 1\) calls to the function \(f(x)\).
+
+
+% \begin{equation}
+%   \frac{}{}
+% \end{equation}
+
 
 \textbf{Remember:}
 
