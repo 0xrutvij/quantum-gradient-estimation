@@ -1,4 +1,3 @@
-% LaTeX Template For MATH 490 @ VCU
 \documentclass{article}
 
 \usepackage{hyperref}
@@ -7,6 +6,7 @@
 \usepackage{amssymb}
 \usepackage{mathtools}
 \usepackage{physics}
+\usepackage{enumitem}
 
 %%%%%%%%%% EXACT 1in MARGINS + DOUBEL SPACED %%%%%%%
 % NOTE IF YOU USE 1IN MARGINS CHANGE THE FONT 	  %%
@@ -64,12 +64,11 @@ measure of its time complexity \cite{quant-ph/0405146}. Thus, an efficient algor
 function evaluations; and our the number of such evaluation calls will define our time complexity.
 
 
-The Qiskit implementation of the algorithm included with this report, is for the case of \(d = 1\),
-and demonstrates the first differential (\(i = 1\)) of two simple functions,
+The Qiskit implementation of the algorithm included with this report (also available on GitHub \footnote[1]{\url{https://github.com/0xrutvij/quantum-gradient-estimation}}),
+is for the case of \(d = 1\). It demonstrates the first differential (\(i = 1\)) of two simple functions,
 \(\sin(x)\) and \(10 x + e^{x}  + x^2\). The implementation utilizes quantum phase estimation as
-a subroutine and a modified \textit{unitary matrix}, which is further elaborated upon within the
-presentation. This report discusses the original algorithm and a few of the algorithms derived from
-it.
+a subroutine and a modified \textit{unitary matrix} used in a PyQuil implementation of the algorithm
+within Rigetti's Grove library \footnote[2]{\url{https://github.com/rigetti/grove}}.
 
 
 \section{Solution Summary}
@@ -89,38 +88,178 @@ Traditionally, for the 1D case, i.e. \(d = 1\), gradients are estimated either a
 using the finite difference method. To calculate the first and other higher derivatives,
 should they exist, the procedure is as follows
 
+For the \(1^{\text{st}}\) gradient we need  \(2\) calls to the function \(f(x)\).
+
 \begin{equation}
   f'(x) =  \lim_{h \to \infty} \frac{f(x + h) - f(x)}{h}
 \end{equation}
 
-For the \(1^{\text{st}}\) gradient we need  \(d + 1\) calls to the function \(f(x)\).
-
+For the \(2^{\text{nd}}\) gradient we need  \(3\) calls to the function \(f(x)\).
 
 \begin{equation}
   f''(x) =  \lim_{h \to \infty} \frac{f(x) - 2f(x - h) + f(x - 2h)}{h^2}
 \end{equation}
 
-For the \(2^{\text{st}}\) gradient we need  \(2d + 1\) calls to the function \(f(x)\).
+For the \(i^{\text{th}}\) gradient we need  \(i + 1\) calls to the function \(f(x)\).
+
+\begin{equation}
+  \frac{\dd^i f(x)}{\dd x^i} \in \mathcal{O}(i)
+\end{equation}
+
+In the case of \(d = 1\), time complexity for numerical gradient calculation is linear in the order
+of the differential to be calculate, which is improved to constant time by
+using quantum gradient estimation.
+
+The speedup is starker in the case of \(d > 1\), since the growth of classical numerical
+gradient estimation is exponentially dependent upon \(d\), while quantum version is
+independent of \(d\), and is exponentially dependent only on the order of derivative needed.
+The time complexities are shown in  \autoref{table:tc}.
+
+\begin{table}[]
+  \centering
+  \begin{tabular}{|c || c | c | c |}
+    \hline
+                           & \multicolumn{2}{c|}{Classical} & \multicolumn{1}{c|}{Quantum}                               \\
+    \hline
+    Derivative             & Numerical                      & Analytical                                 & Numerical     \\
+    \hline
+    \(\dd F / \dd x\)      & \(d + 1\)                      & \(\mathcal{O}(1)\)                         & \(1\)         \\
+    \(\dd^2 F / \dd x^2\)  & \(d^2 + 1\)                    & \(\mathcal{O}(d)\)                         & \(2\)         \\
+    \(\dd^3 F / \dd x^3 \) & \(d^3 + 1\)                    & \(\mathcal{O}(d)\)                         & \(4\)         \\
+    \(\dd^i F / \dd x^i\)  & \(d^i + 1\)                    & \(\mathcal{O}(d^{\lfloor i / 2 \rfloor})\) & \(2^{i - 1}\) \\
+    \hline
+  \end{tabular}
+  \caption{Quantum speedup for gradient estimation \cite{0908.1921}.}
+  \label{table:tc}
+\end{table}
+
+\section{Jordan's Algorithm}
+
+\noindent Let
+\begin{description}[labelindent=10pt,labelsep=10pt]
+  \item[\(f\)] the function whose gradient is to be estimated
+  \item[\(n\)] the bits of precision for the input space.
+  \item[\(n_o\)] the bits of precision for the gradient estimate.
+  \item[\(d\)] the dimension of the input space of \(f\)
+  \item[\(h\)] the size of the region where \(f\) is approximately linear.
+  \item[\(m\)] the size of the region for \(\nabla f\)
+  \item[\(N\)] \(= 2^n\)
+  \item[\(\ket k_i\)] floating point values, \(< 1\), represented by \(n\) qubits
+    \\ in binary form \(0.b_0\ldots b_n\).
+  \item[\(\ket{\mathbf{k}}\)] a \(d\)-dimensional vector of all the \(\ket k\)'s
+  \item[\(\ket{\psi}\)] the ancilla register.
+  \item[\(U\)] an \textit{unitary transform} used to encode the gradient's phase.
+\end{description}
+
+The algorithm considered takes as its input \(d\) fixed point binary strings, each of length
+\(n\), along with an ancilla register \(\psi\), which encodes the phase. The size of the ancilla
+register is \(n_o\). In the implemented version of the algorithm, \(n_o = n\).
+
+The input registers are initialized based on the value at which the gradient is to be estimated,
+here we consider it to be \(\ket{\mathbf{0}} = (\ket{0}_1, \ldots, \ket{0}_d)\). While the ancilla register
+is initialized to \(\ket{\mathbf{1}}\). The Hadamard transform is applied to each of the
+input registers followed by controlled unitary operations as used in the Quantum Phase Estimation
+algorithm. \newline
+
+The unitary transform encodes \(f(h) \coloneqq \frac{f(x + h) - f(x - h)}{2h}\), within the phase
+as follows, here \(j\) is the position index of the qubit within the register.
+
+Lastly, IQFT is applied to the input registers and the encoded phase kicks back, causing the output
+gradient to be encoded within the \textit{input} registers, in Jordan's original algorithm the output is
+encoded within the \textit{ancilla} register.
+
+This affects the reversibility of our gradient estimation function and thus `un-computation' is required
+to use this algorithm as a subroutine. Details of the reversible versions of the algorithm, are discussed in
+\cite{quant-ph/0405146}, \cite{1711.00465}, \cite{quant-ph/0507109} and \cite{0908.1921}.
 
 
-% \begin{equation}
-%   \frac{}{}
-% \end{equation}
+\[
+  U^{2^j} =
+  \begin{bmatrix}
+    e^{2 \pi \iota 2^j f(h)} & 1                        \\
+    1                        & e^{2 \pi \iota 2^j f(h)} \\
+  \end{bmatrix}
+\]
 
 
-\textbf{Remember:}
+\noindent i.e.
+\begin{description}
+  \item[\(\ket{\mathbf{k}}\)] \(= \ket{\mathbf{0}}\)
+  \item[\(\ket{\psi}\)] \(= \ket{\mathbf{1}}\)
+  \item[\(U\)] \(=\begin{bmatrix}
+      e^{2 \pi \iota f(h)} & 1                    \\
+      1                    & e^{2 \pi \iota f(h)} \\
+    \end{bmatrix}\)
+\end{description}
 
-\begin{enumerate}
-  \item I should be able to understand your entire paper without consulting the article you read. This means you need to define every technical term that you will use and build my (the reader's) intuition about the topic by giving simple examples, etc.
-  \item Use both in-line equations such as $x^2-x=0$ as well as centered equations like
-        $$(a-b)(c-d)(e-f)(g-h)=0.$$
-\end{enumerate}
+The algorithm starts in equal superposition of \(d\) registers of \(n\) qubits each, after
+the application of \(H^{\otimes d}\)
+
+\begin{equation}
+  \frac{1}{\sqrt{N^d}} \sum_{\mathbf{k}} \ket{\mathbf{k}}
+\end{equation}
+
+Together with the ancilla register the state is
+
+\begin{equation}
+  \frac{1}{\sqrt{N^d N_o}} \sum_{\mathbf{k}} \ket{\mathbf{k}}
+  \sum_{\psi} e^{2 \pi \iota f(h) / N_o} \ket{\psi}
+\end{equation}
+
+After applying the unitary transforms, for sufficiently small \(h\), the state is
+
+\begin{equation}
+  \frac{1}{\sqrt{N^d N_o}} \sum_{\mathbf{k}}
+  e^{2 \pi \iota \frac{N}{m h}(f(\mathbf{0}) + \frac{h}{N}(\mathbf{k} - \frac{N}{2}) \cdot \nabla f)}
+  \ket{\mathbf{k}}
+  \sum_{\psi} e^{2 \pi \iota f(h) / N_o} \ket{\psi}
+\end{equation}
+
+Ignoring the global phase, the input registers are now approximately in the state
+
+\begin{equation}
+  \frac{1}{\sqrt{N^d}} \sum_{k_1 \ldots k_d}
+  e^{\frac{2 \pi \iota}{m} (
+      k_1 \frac{\partial f}{\partial x_1} + \ldots + k_d \frac{\partial f}{\partial x_d}
+      )}
+  \ket{k_1} \ldots \ket{k_d}
+\end{equation}
+
+This is a product state:
+
+\begin{equation}
+  \frac{1}{\sqrt{N^d}}
+  \left(
+  \sum_{k_1}
+  e^{\frac{2 \pi \iota}{m} k_1 \frac{\partial f}{\partial x_1}}
+  \right)
+  \ldots
+  \left(
+  \sum_{k_d}
+  e^{\frac{2 \pi \iota}{m} k_d \frac{\partial f}{\partial x_d}}
+  \right)
+\end{equation}
+
+Inverse Fourier transform each of the input registers, obtaining the required gradient estimate.
+
+\begin{equation}
+  \left| \frac{N}{m} \frac{\partial f}{\partial k_1} \right\rangle
+  \left| \frac{N}{m} \frac{\partial f}{\partial k_2} \right\rangle
+  \ldots
+  \left| \frac{N}{m} \frac{\partial f}{\partial k_d} \right\rangle
+\end{equation}
 
 \section{Conclusion}
 
-Sum up the most important points you want to make about the article. Restate your overall evaluation. Tell whether the article increase your understanding of the subject or not. Why? Why not? Mention question you were expecting to be answered by the article that were not answered. Finally would you recommend others to read the article? Why?
+Jordan's algorithm demonstrates an approach to estimating numerical gradients using a quantum approach.
+Gradient evaluation for real-valued multivariate functions is shown to be a constant time operation, and
+for higher order derivatives, dependent only on the order of the derivative, i.e. independent of the input size.
+This is an improvement over the linear complexity for classical gradient estimation approaches for higher dimensions
+which further becomes exponential in the size of the input for higher order derivatives.
 
-
+Further work from the perspective of implementation, involves implementing the general \(d\)-dimensional version of
+the algorithm using multiple registers, and making the computation reversible to ensure that the algorithm can be
+used as a subroutine without incurring any previous input-dependent global phase.
 
 
 %
